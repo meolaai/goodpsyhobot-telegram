@@ -49,28 +49,57 @@ def home():
 def get_answer_from_huggingface(question):
     """Отправляет вопрос в Hugging Face и получает ответ"""
     try:
-        print(f"🔍 Запрос к HF: {question}")
+        print(f"🔍 Отправляем запрос в Hugging Face: {question}")
         
-        data = {"data": [question]}
-        headers = {"Content-Type": "application/json"}
+        # Правильный URL
+        HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
+        api_url = f"{HF_SPACE_URL}/api/predict"
+        print(f"🌐 API URL: {api_url}")
         
+        # Данные для запроса
+        data = {
+            "data": [question]
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "TelegramBot/1.0"
+        }
+        
+        # Делаем запрос с подробным логированием
+        print(f"📤 Отправляем POST запрос...")
         response = requests.post(
-            f"{HF_SPACE_URL}/api/predict",
+            api_url,
             json=data,
             headers=headers,
             timeout=30
         )
         
-        print(f"📡 Статус HF: {response.status_code}")
+        print(f"📡 Статус ответа: {response.status_code}")
+        print(f"📄 Заголовки ответа: {dict(response.headers)}")
+        print(f"📝 Тело ответа: {response.text[:500]}...")  # Первые 500 символов
         
         if response.status_code == 200:
             result = response.json()
+            print("✅ Успешный ответ от Hugging Face")
             return result["data"][0]
         else:
-            return f"❌ Ошибка HF API: {response.status_code}"
+            error_msg = f"❌ Ошибка API Hugging Face (код: {response.status_code})"
+            print(error_msg)
+            return error_msg
             
+    except requests.exceptions.Timeout:
+        error_msg = "❌ Таймаут при подключении к Hugging Face"
+        print(error_msg)
+        return error_msg
+    except requests.exceptions.ConnectionError:
+        error_msg = "❌ Ошибка соединения с Hugging Face"
+        print(error_msg)
+        return error_msg
     except Exception as e:
-        return f"❌ Ошибка: {str(e)}"
+        error_msg = f"❌ Неожиданная ошибка: {str(e)}"
+        print(error_msg)
+        return error_msg
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
