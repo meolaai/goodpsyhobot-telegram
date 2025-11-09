@@ -52,7 +52,7 @@ def get_answer_from_huggingface(question):
         print(f"🔍 Отправляем запрос в Hugging Face: {question}")
         
         # Правильный URL
-        api_url = f"{HF_SPACE_URL}/run"
+        api_url = f"{HF_SPACE_URL}/api/run"
         print(f"🌐 API URL: {api_url}")
         
         # Данные для запроса
@@ -156,5 +156,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🌐 Сервер на порту {port}")
     server.run(host="0.0.0.0", port=port, debug=False)
+
 
 
