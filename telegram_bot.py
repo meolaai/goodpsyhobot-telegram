@@ -7,7 +7,7 @@ from threading import Thread
 
 # === НАСТРОЙКИ ===
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
-HF_SPACE_URL = "https://ваш-логин-ваш-psychobot.hf.space"
+HF_SPACE_URL = "https://huggingface.co/spaces/meolaai/Psihobot"
 
 # Создаем бота
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -22,20 +22,19 @@ def home():
 def get_answer_from_huggingface(question):
     """Отправляет вопрос в Hugging Face и получает ответ"""
     try:
-        # Временно возвращаем тестовый ответ
-        return f"Тестовый ответ на: {question}"
+        # Отправляем запрос к Hugging Face Space
+        response = requests.post(
+            f"{HF_SPACE_URL}/api/predict",
+            json={"data": [question]},
+            headers={"Content-Type": "application/json"},
+            timeout=30  # добавляем таймаут
+        )
         
-        # Позже раскомментируйте это:
-        # response = requests.post(
-        #     f"{HF_SPACE_URL}/api/predict",
-        #     json={"data": [question]},
-        #     headers={"Content-Type": "application/json"}
-        # )
-        # if response.status_code == 200:
-        #     result = response.json()
-        #     return result["data"][0]
-        # else:
-        #     return "❌ Ошибка соединения с ботом"
+        if response.status_code == 200:
+            result = response.json()
+            return result["data"][0]
+        else:
+            return f"❌ Ошибка соединения с Hugging Face (код: {response.status_code})"
             
     except Exception as e:
         return f"❌ Произошла ошибка: {str(e)}"
@@ -83,3 +82,4 @@ def run():
 
 if __name__ == "__main__":
     run()
+
