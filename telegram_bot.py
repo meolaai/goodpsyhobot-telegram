@@ -47,58 +47,45 @@ def home():
     return status_html
 
 def get_answer_from_huggingface(question):
-    """Отправляет вопрос в Hugging Face и получает ответ"""
+    """Диагностика API"""
     try:
-        print(f"🔍 Отправляем запрос в Hugging Face: {question}")
+        print(f"🔍 Запрос: {question}")
         
-        # Правильный URL
-        api_url = f"{HF_SPACE_URL}/api/run"
-        print(f"🌐 API URL: {api_url}")
+        # Пробуем стандартный endpoint
+        api_url = f"{HF_SPACE_URL}/api/predict"
+        print(f"🌐 URL: {api_url}")
         
-        # Данные для запроса
-        data = {
-            "data": [question]
-        }
+        # Пробуем разные форматы данных
+        test_payloads = [
+            {"data": [question]},
+            {"inputs": question},
+            {"question": question}
+        ]
         
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "TelegramBot/1.0"
-        }
-        
-        # Делаем запрос с подробным логированием
-        print(f"📤 Отправляем POST запрос...")
-        response = requests.post(
-            api_url,
-            json=data,
-            headers=headers,
-            timeout=30
-        )
-        
-        print(f"📡 Статус ответа: {response.status_code}")
-        print(f"📄 Заголовки ответа: {dict(response.headers)}")
-        print(f"📝 Тело ответа: {response.text[:500]}...")  # Первые 500 символов
-        
-        if response.status_code == 200:
-            result = response.json()
-            print("✅ Успешный ответ от Hugging Face")
-            return result["data"][0]
-        else:
-            error_msg = f"❌ Ошибка API Hugging Face (код: {response.status_code})"
-            print(error_msg)
-            return error_msg
+        for i, data in enumerate(test_payloads):
+            print(f"📤 Попытка {i+1}: {data}")
             
-    except requests.exceptions.Timeout:
-        error_msg = "❌ Таймаут при подключении к Hugging Face"
-        print(error_msg)
-        return error_msg
-    except requests.exceptions.ConnectionError:
-        error_msg = "❌ Ошибка соединения с Hugging Face"
-        print(error_msg)
-        return error_msg
+            response = requests.post(
+                api_url,
+                json=data,
+                headers={"Content-Type": "application/json"},
+                timeout=20
+            )
+            
+            print(f"📡 Статус: {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"✅ Успех с форматом {i+1}: {result}")
+                return result.get("data", [""])[0] if "data" in result else str(result)
+            else:
+                print(f"❌ Формат {i+1} не подходит")
+        
+        return "❌ Не удалось подключиться к API"
+        
     except Exception as e:
-        error_msg = f"❌ Неожиданная ошибка: {str(e)}"
-        print(error_msg)
-        return error_msg
+        return f"❌ Ошибка: {str(e)}"
+ # ← ФУНКЦИЯ ЗАКАНЧИВАЕТСЯ ЗДЕСЬ
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -156,6 +143,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🌐 Сервер на порту {port}")
     server.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
