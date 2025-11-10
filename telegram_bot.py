@@ -4,6 +4,8 @@ import telebot
 from flask import Flask, request
 import requests
 from gradio_client import Client
+import threading
+import time
 
 # Принудительно сбрасываем буфер вывода
 sys.stdout.flush()
@@ -11,9 +13,8 @@ sys.stdout.flush()
 # Настройки
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
-API_URL = "https://meolaai-psihobot.hf.space/"  # просто основной URL
 
-print("🟢 ВЕРСИЯ 13: без разметки как обычный текст")
+print("🟢 ВЕРСИЯ 14: Добавляем уведомление о долгой обработке")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -50,16 +51,54 @@ def get_answer_from_huggingface(question):
 def send_welcome(message):
     print(f"🎯 Получен /start от {message.from_user.id}")
     sys.stdout.flush()
-    welcome_text = "👋 Привет! Я Психобот 🤖"
+    welcome_text = """👋 Привет! Я Психобот 🤖
+
+Задайте мне ваш вопрос или опишите проблему, и я найду подходящие цитаты с видеофрагментами.
+
+💡 Примеры вопросов:
+• "апатия и нет сил"
+• "стресс на работе" 
+• "кризис в жизни"
+
+Просто напишите ваш вопрос — и я найду ответ!"""
     bot.reply_to(message, welcome_text)
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     print(f"📨 Текстовое сообщение: {message.text}")
     sys.stdout.flush()
+    
+    # Отправляем действие "печатает"
     bot.send_chat_action(message.chat.id, 'typing')
+    
+    # Флаг для отслеживания отправки уведомления
+    delay_notification_sent = False
+    
+    def send_delay_notification():
+        nonlocal delay_notification_sent
+        time.sleep(10)  # Ждем 10 секунд
+        if not delay_notification_sent:
+            print("⏳ Отправляем уведомление о долгой обработке")
+            sys.stdout.flush()
+            bot.send_chat_action(message.chat.id, 'typing')
+            bot.send_message(message.chat.id, "⏳ Ищу наиболее релевантные ответы... Это может занять некоторое время")
+            delay_notification_sent = True
+    
+    # Запускаем таймер в отдельном потоке
+    timer_thread = threading.Thread(target=send_delay_notification)
+    timer_thread.daemon = True
+    timer_thread.start()
+    
+    # Получаем ответ от AI
     answer = get_answer_from_huggingface(message.text)
+    
+    # Отмечаем, что уведомление больше не нужно
+    delay_notification_sent = True
+    
+    # Отправляем ответ
     bot.reply_to(message, answer, disable_web_page_preview=True)
+    print("✅ Ответ отправлен пользователю")
+    sys.stdout.flush()
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -87,5 +126,3 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
