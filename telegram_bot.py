@@ -2,7 +2,6 @@ import os
 import telebot
 from flask import Flask, request
 import requests
-import time
 
 # Настройки
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -36,7 +35,16 @@ def get_answer_from_huggingface(question):
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     print(f"🎯 Получен /start от {message.from_user.id}")
-    welcome_text = "👋 Привет! Я Психобот 🤖 Проверка связи: бот работает!"
+    welcome_text = """👋 Привет! Я Психобот 🤖
+
+Задайте мне ваш вопрос или опишите проблему, и я найду подходящие цитаты с видеофрагментами.
+
+💡 Примеры вопросов:
+• "апатия и нет сил"
+• "стресс на работе" 
+• "кризис в жизни"
+
+Просто напишите ваш вопрос — и я найду ответ!"""
     bot.reply_to(message, welcome_text)
 
 # Обработчик всех сообщений
@@ -48,7 +56,7 @@ def handle_message(message):
     print(f"📤 Отправляем ответ: {answer[:100]}...")
     bot.reply_to(message, answer)
 
-# ВАЖНО: Вебхук endpoint для Telegram
+# Вебхук endpoint для Telegram
 @app.route('/webhook', methods=['POST'])
 def webhook():
     print("📍 Получен запрос на /webhook")
