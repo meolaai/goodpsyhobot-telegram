@@ -1,149 +1,49 @@
 import os
 import telebot
-from flask import Flask
 import requests
 import time
-from threading import Thread
-from datetime import datetime
 
-# === НАСТРОЙКИ ===
+# Новый токен от нового бота
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
-# ⚠️ ПРАВИЛЬНЫЙ URL!
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-# Создаем бота
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# Создаем Flask приложение
-server = Flask(__name__)
-
-# Переменные для статуса
-start_time = datetime.now()
-request_count = 0
-
-@server.route('/')
-def home():
-    global request_count
-    request_count += 1
-    
-    status_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>🤖 Психобот Статус</title>
-        <meta charset="utf-8">
-    </head>
-    <body>
-        <div>
-            <h1>🤖 Психобот - Статус системы</h1>
-            <p><strong>Статус:</strong> 🟢 АКТИВЕН</p>
-            <p><strong>Время запуска:</strong> {start_time.strftime('%Y-%m-%d %H:%M:%S')}</p>
-            <p><strong>Hugging Face:</strong> {HF_SPACE_URL}</p>
-            <p><strong>Токен бота:</strong> {'✅ Установлен' if BOT_TOKEN else '❌ НЕ НАЙДЕН'}</p>
-        </div>
-    </body>
-    </html>
-    """
-    return status_html
-
-def get_answer_from_huggingface(question):
-    """Диагностика API"""
-    try:
-        print(f"🔍 Запрос: {question}")
-        
-        # Пробуем стандартный endpoint
-        api_url = f"{HF_SPACE_URL}/api/predict"
-        print(f"🌐 URL: {api_url}")
-        
-        # Пробуем разные форматы данных
-        test_payloads = [
-            {"data": [question]},
-            {"inputs": question},
-            {"question": question}
-        ]
-        
-        for i, data in enumerate(test_payloads):
-            print(f"📤 Попытка {i+1}: {data}")
-            
-            response = requests.post(
-                api_url,
-                json=data,
-                headers={"Content-Type": "application/json"},
-                timeout=20
-            )
-            
-            print(f"📡 Статус: {response.status_code}")
-            
-            if response.status_code == 200:
-                result = response.json()
-                print(f"✅ Успех с форматом {i+1}: {result}")
-                return result.get("data", [""])[0] if "data" in result else str(result)
-            else:
-                print(f"❌ Формат {i+1} не подходит")
-        
-        return "❌ Не удалось подключиться к API"
-        
-    except Exception as e:
-        return f"❌ Ошибка: {str(e)}"
- # ← ФУНКЦИЯ ЗАКАНЧИВАЕТСЯ ЗДЕСЬ
-
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
-    welcome_text = """👋 Привет! Я Психобот 🤖
-
-Задайте мне ваш вопрос или опишите проблему, и я найду подходящие цитаты с видеофрагментами.
-
-💡 Примеры вопросов:
-• "апатия и нет сил"
-• "стресс на работе" 
-• "кризис в жизни"
-
-Просто напишите ваш вопрос — и я найду ответ!"""
-    bot.reply_to(message, welcome_text)
+def start(message):
+    bot.reply_to(message, "✅ Бот перезапущен! Тестируем Hugging Face...")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    bot.send_chat_action(message.chat.id, 'typing')
-    answer = get_answer_from_huggingface(message.text)
-    bot.reply_to(message, answer, parse_mode='HTML')
-
-def run_bot():
-    """Запускает бота с защитой от конфликтов"""
-    print("🔄 Запуск бота...")
-    time.sleep(10)  # Увеличили ожидание
+    print(f"📩 Получено: {message.text}")
     
     try:
-        # Сбрасываем ВСЕ предыдущие соединения
-        bot.remove_webhook()
-        time.sleep(5)
+        # Простой запрос к Hugging Face
+        response = requests.post(
+            f"{HF_SPACE_URL}/api/predict",
+            json={"data": [message.text]},
+            timeout=10
+        )
         
-        # Запускаем с skip_pending
-        bot.infinity_polling(skip_pending=True, timeout=120, long_polling_timeout=120)
-        print("✅ Бот успешно запущен!")
+        print(f"📡 Статус: {response.status_code}")
+        
+        if response.status_code == 200:
+            result = response.json()
+            bot.reply_to(message, f"✅ Ответ: {result['data'][0]}")
+        else:
+            bot.reply_to(message, f"❌ Ошибка {response.status_code}")
+            
     except Exception as e:
         print(f"❌ Ошибка: {e}")
-        time.sleep(30)
-        run_bot()  # Перезапускаем
+        bot.reply_to(message, f"❌ Ошибка: {e}")
 
-if __name__ == "__main__":
-    print("🚀 Запускаем сервис...")
-    print(f"🔗 HF URL: {HF_SPACE_URL}")
-    print(f"🔑 Токен: {'✅' if BOT_TOKEN else '❌'}")
-    
-    if not BOT_TOKEN:
-        print("❌ BOT_TOKEN не найден!")
-        exit(1)
-    
-    # Запускаем бота
-    bot_thread = Thread(target=run_bot)
-    bot_thread.daemon = True
-    bot_thread.start()
-    
-    # Запускаем сервер
-    port = int(os.environ.get("PORT", 10000))
-    print(f"🌐 Сервер на порту {port}")
-    server.run(host="0.0.0.0", port=port, debug=False)
+print("🔄 Запускаем бота...")
+time.sleep(5)
 
-
-
-
+try:
+    bot.remove_webhook()
+    time.sleep(2)
+    bot.infinity_polling()
+    print("✅ Бот работает!")
+except Exception as e:
+    print(f"❌ Ошибка запуска: {e}")
