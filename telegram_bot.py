@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 17: Добавляем уведомление о долгой обработке, ждем 3 секунды")
+print("🟢 ВЕРСИЯ 18: Добавляем печатание, ждем 3 секунды")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -68,32 +68,36 @@ def handle_message(message):
     print(f"📨 Текстовое сообщение: {message.text}")
     sys.stdout.flush()
     
-    # Отправляем действие "печатает"
-    bot.send_chat_action(message.chat.id, 'typing')
+    # Флаг для управления индикатором
+    stop_typing = False
     
-    # Флаг для отслеживания отправки уведомления
-    delay_notification_sent = False
+    def show_typing_indicator():
+        while not stop_typing:
+            bot.send_chat_action(message.chat.id, 'typing')
+            time.sleep(5)  # Обновляем индикатор каждые 5 секунд
     
     def send_delay_notification():
-        nonlocal delay_notification_sent
         time.sleep(3)  # Ждем 3 секунды
-        if not delay_notification_sent:
+        if not stop_typing:
             print("⏳ Отправляем уведомление о долгой обработке")
             sys.stdout.flush()
-            bot.send_chat_action(message.chat.id, 'typing')
             bot.send_message(message.chat.id, "⏳ Ищу наиболее релевантные ответы... Это может занять некоторое время")
-            delay_notification_sent = True
     
-    # Запускаем таймер в отдельном потоке
-    timer_thread = threading.Thread(target=send_delay_notification)
-    timer_thread.daemon = True
-    timer_thread.start()
+    # Запускаем индикатор печати
+    typing_thread = threading.Thread(target=show_typing_indicator)
+    typing_thread.daemon = True
+    typing_thread.start()
+    
+    # Запускаем таймер для уведомления
+    notification_thread = threading.Thread(target=send_delay_notification)
+    notification_thread.daemon = True
+    notification_thread.start()
     
     # Получаем ответ от AI
     answer = get_answer_from_huggingface(message.text)
     
-    # Отмечаем, что уведомление больше не нужно
-    delay_notification_sent = True
+    # Останавливаем индикатор
+    stop_typing = True
     
     # Отправляем ответ
     bot.reply_to(message, answer, disable_web_page_preview=True)
@@ -126,6 +130,7 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
