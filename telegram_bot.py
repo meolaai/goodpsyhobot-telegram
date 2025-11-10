@@ -13,7 +13,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 API_URL = "https://meolaai-psihobot.hf.space/"  # просто основной URL
 
-print("🟢 ВЕРСИЯ 9:на основе примера из API")
+print("🟢 ВЕРСИЯ 10:добавляем форматирование")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -28,7 +28,17 @@ def get_answer_from_huggingface(question):
             api_name="/find_relevant_quote"
         )
         print(f"✅ Успешный ответ от AI")
-        return str(result)
+        
+        # Конвертируем HTML в Markdown для Telegram
+        formatted_result = (str(result)
+            .replace('<strong>', '*').replace('</strong>', '*')  # Жирный текст
+            .replace('<em>', '_').replace('</em>', '_')          # Курсив
+            .replace('<br>', '\n')                               # Переносы строк
+            .replace('<br/>', '\n')
+            .replace('<br />', '\n'))
+        
+        return formatted_result
+        
     except Exception as e:
         print(f"❌ Ошибка AI: {e}")
         return f"❌ Ошибка: {str(e)}"
@@ -46,7 +56,7 @@ def handle_message(message):
     sys.stdout.flush()
     bot.send_chat_action(message.chat.id, 'typing')
     answer = get_answer_from_huggingface(message.text)
-    bot.reply_to(message, answer)
+    bot.reply_to(message, answer, parse_mode='Markdown')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -74,6 +84,7 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
