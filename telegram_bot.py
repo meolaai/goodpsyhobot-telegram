@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 24: исправляем заголовки видео")
+print("🟢 ВЕРСИЯ 25: исправляем работу ссылок видео")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -29,6 +29,9 @@ def get_answer_from_huggingface(question):
             api_name="/find_relevant_quote"
         )
         print(f"✅ Успешный ответ от AI")
+
+        # ДИАГНОСТИКА: смотрим сырой ответ ДО очистки
+        print(f"📄 СЫРОЙ ОТВЕТ: {result}")
         
         # Очищаем от всех HTML-тегов и лишних символов
         clean_result = (str(result)
@@ -40,6 +43,9 @@ def get_answer_from_huggingface(question):
             .replace('<br/>', '\n')
             .replace('<br />', '\n')
             .strip())  # Убираем пробелы в начале/конце
+        
+        # ДИАГНОСТИКА: смотрим результат ПОСЛЕ очистки
+        print(f"📄 ОЧИЩЕННЫЙ ОТВЕТ: {clean_result}")
                       
         return clean_result
         
@@ -145,4 +151,5 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
