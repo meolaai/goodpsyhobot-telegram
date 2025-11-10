@@ -13,7 +13,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 API_URL = "https://meolaai-psihobot.hf.space/"  # просто основной URL
 
-print("🟢 ВЕРСИЯ 11: Детальная диагностика AI")
+print("🟢 ВЕРСИЯ 12: разметка HTML")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -69,7 +69,7 @@ def handle_message(message):
     sys.stdout.flush()
     bot.send_chat_action(message.chat.id, 'typing')
     answer = get_answer_from_huggingface(message.text)
-    bot.reply_to(message, answer, parse_mode='Markdown')
+    bot.reply_to(message, answer, parse_mode='HTML')
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -97,3 +97,4 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
