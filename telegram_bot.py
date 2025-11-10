@@ -3,178 +3,74 @@ import telebot
 from flask import Flask
 import requests
 import time
-from threading import Thread
-from datetime import datetime
 
 # === НАСТРОЙКИ ===
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-# Создаем бота
+print(f"🔑 Токен: {'✅' if BOT_TOKEN else '❌'}")
+
+# Создаем бота и сервер
 bot = telebot.TeleBot(BOT_TOKEN)
-
-# Создаем Flask приложение
 server = Flask(__name__)
-
-# Переменные для статуса
-start_time = datetime.now()
-request_count = 0
 
 @server.route('/')
 def home():
-    global request_count
-    request_count += 1
-    
-    status_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>🤖 Психобот Статус</title>
-        <meta charset="utf-8">
-    </head>
-    <body>
-        <div>
-            <h1>🤖 Психобот - Статус системы</h1>
-            <p><strong>Статус:</strong> 🟢 АКТИВЕН</p>
-            <p><strong>Время запуска:</strong> {start_time.strftime('%Y-%m-%d %H:%M:%S')}</p>
-            <p><strong>Hugging Face:</strong> {HF_SPACE_URL}</p>
-            <p><strong>Токен бота:</strong> {'✅ Установлен' if BOT_TOKEN else '❌ НЕ НАЙДЕН'}</p>
-            <p><strong>Запросов к статусу:</strong> {request_count}</p>
-        </div>
-    </body>
-    </html>
-    """
-    return status_html
+    return "🤖 Психобот @catpsybot работает!", 200
 
 @server.route('/health')
 def health():
     return "OK", 200
 
-@server.route('/ping')
-def ping():
-    return "pong", 200
-
 def get_answer_from_huggingface(question):
-    """Отправляет вопрос в Hugging Face и получает ответ"""
     try:
-        print(f"🔍 Отправляем запрос в Hugging Face: {question}")
-        
-        api_url = f"{HF_SPACE_URL}/api/predict"
-        print(f"🌐 API URL: {api_url}")
-        
-        data = {
-            "data": [question]
-        }
-        
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "TelegramBot/1.0"
-        }
-        
-        print(f"📤 Отправляем POST запрос...")
         response = requests.post(
-            api_url,
-            json=data,
-            headers=headers,
+            f"{HF_SPACE_URL}/api/predict",
+            json={"data": [question]},
             timeout=30
         )
-        
-        print(f"📡 Статус ответа: {response.status_code}")
-        
         if response.status_code == 200:
-            result = response.json()
-            print("✅ Успешный ответ от Hugging Face")
-            return result["data"][0]
+            return response.json()["data"][0]
         else:
-            error_msg = f"❌ Ошибка API Hugging Face (код: {response.status_code})"
-            print(error_msg)
-            return error_msg
-            
-    except requests.exceptions.Timeout:
-        error_msg = "❌ Таймаут при подключении к Hugging Face"
-        print(error_msg)
-        return error_msg
-    except requests.exceptions.ConnectionError:
-        error_msg = "❌ Ошибка соединения с Hugging Face"
-        print(error_msg)
-        return error_msg
+            return f"❌ Ошибка {response.status_code}"
     except Exception as e:
-        error_msg = f"❌ Неожиданная ошибка: {str(e)}"
-        print(error_msg)
-        return error_msg
+        return f"❌ Ошибка: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    welcome_text = """👋 Привет! Я Психобот 🤖
-
-Задайте мне ваш вопрос или опишите проблему, и я найду подходящие цитаты с видеофрагментами.
-
-💡 Примеры вопросов:
-• "апатия и нет сил"
-• "стресс на работе" 
-• "кризис в жизни"
-
-Просто напишите ваш вопрос — и я найду ответ!"""
-    bot.reply_to(message, welcome_text)
+    print(f"✅ /start от {message.from_user.id}")
+    bot.reply_to(message, "👋 Привет! Я Психобот. Задайте вопрос!")
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
+    print(f"📨 Сообщение: {message.text}")
     bot.send_chat_action(message.chat.id, 'typing')
     answer = get_answer_from_huggingface(message.text)
-    bot.reply_to(message, answer, parse_mode='HTML')
+    bot.reply_to(message, answer)
 
-def run_bot():
-    """Запускает бота в отдельном потоке"""
-    print("🔄 Запуск бота в отдельном потоке...")
-    time.sleep(10)  # Даем время запуститься Flask серверу
-    
-    max_retries = 3
-    retry_count = 0
-    
-    while retry_count < max_retries:
-        try:
-            print(f"🔄 Попытка {retry_count + 1} запуска бота...")
-            
-            # Сбрасываем webhook перед запуском polling
-            bot.remove_webhook()
-            time.sleep(2)
-            
-            print("✅ Запускаем polling бота...")
-            bot.infinity_polling(
-                skip_pending=True, 
-                timeout=90, 
-                long_polling_timeout=90,
-                restart_on_change=True
-            )
-            
-        except Exception as e:
-            retry_count += 1
-            print(f"❌ Ошибка при запуске бота (попытка {retry_count}): {e}")
-            
-            if retry_count < max_retries:
-                wait_time = 15
-                print(f"⏳ Ждем {wait_time} секунд перед повторной попыткой...")
-                time.sleep(wait_time)
-            else:
-                print("❌ Достигнуто максимальное количество попыток запуска бота")
+# ЗАПУСКАЕМ БОТА СРАЗУ ЖЕ
+def start_bot():
+    print("🔄 ЗАПУСКАЕМ БОТА...")
+    time.sleep(5)
+    try:
+        bot.remove_webhook()
+        print("✅ Webhook сброшен, запускаем polling...")
+        bot.infinity_polling(timeout=90, long_polling_timeout=90)
+    except Exception as e:
+        print(f"❌ Ошибка бота: {e}")
+        time.sleep(10)
+        start_bot()  # Перезапуск
 
 if __name__ == "__main__":
-    print("🚀 Запускаем сервис...")
-    print(f"🔗 HF URL: {HF_SPACE_URL}")
-    print(f"🔑 Токен: {'✅' if BOT_TOKEN else '❌'}")
+    print("🚀 СЕРВИС ЗАПУЩЕН")
     
-    if not BOT_TOKEN:
-        print("❌ BOT_TOKEN не найден!")
-        exit(1)
-    
-    # Запускаем бота в отдельном потоке
-    bot_thread = Thread(target=run_bot, daemon=True)
+    # Запускаем бота в основном потоке
+    import threading
+    bot_thread = threading.Thread(target=start_bot, daemon=True)
     bot_thread.start()
-    print("✅ Поток бота запущен")
+    print("✅ ПОТОК БОТА ЗАПУЩЕН")
     
-    # Запускаем Flask сервер (это ОСНОВНОЙ процесс для Render)
+    # Запускаем сервер
     port = int(os.environ.get("PORT", 10000))
-    print(f"🌐 Запускаем Flask сервер на порту {port}")
-    
-    # ВАЖНО: use_reloader=False для многопоточности
+    print(f"🌐 СЕРВЕР НА ПОРТУ {port}")
     server.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
