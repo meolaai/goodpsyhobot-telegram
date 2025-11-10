@@ -3,6 +3,8 @@ import telebot
 from flask import Flask, request
 import requests
 
+print("🟢 ВЕРСИЯ 2: Код с диагностикой API")
+
 # Настройки
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
@@ -115,5 +117,6 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Сервер запущен на порту {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
