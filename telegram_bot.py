@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 18: Добавляем печатание, ждем 3 секунды")
+print("🟢 ВЕРСИЯ 19: Испаравляем ошибки")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -68,25 +68,24 @@ def handle_message(message):
     print(f"📨 Текстовое сообщение: {message.text}")
     sys.stdout.flush()
     
-    # Флаг для управления индикатором
-    stop_typing = False
+    # Сразу показываем "печатает"
+    bot.send_chat_action(message.chat.id, 'typing')
     
-    def show_typing_indicator():
-        while not stop_typing:
-            bot.send_chat_action(message.chat.id, 'typing')
-            time.sleep(5)  # Обновляем индикатор каждые 5 секунд
+    # Флаги управления
+    notification_sent = False
+    notification_message_id = None
     
     def send_delay_notification():
+        nonlocal notification_sent, notification_message_id
         time.sleep(3)  # Ждем 3 секунды
-        if not stop_typing:
+        if not notification_sent:
             print("⏳ Отправляем уведомление о долгой обработке")
             sys.stdout.flush()
-            bot.send_message(message.chat.id, "⏳ Ищу наиболее релевантные ответы... Это может занять некоторое время")
-    
-    # Запускаем индикатор печати
-    typing_thread = threading.Thread(target=show_typing_indicator)
-    typing_thread.daemon = True
-    typing_thread.start()
+            # Обновляем индикатор и отправляем уведомление
+            bot.send_chat_action(message.chat.id, 'typing')
+            sent_msg = bot.send_message(message.chat.id, "⏳ Ищу наиболее релевантные ответы...")
+            notification_message_id = sent_msg.message_id
+            notification_sent = True
     
     # Запускаем таймер для уведомления
     notification_thread = threading.Thread(target=send_delay_notification)
@@ -96,11 +95,15 @@ def handle_message(message):
     # Получаем ответ от AI
     answer = get_answer_from_huggingface(message.text)
     
-    # Останавливаем индикатор
-    stop_typing = True
+    # Если было отправлено уведомление - удаляем его
+    if notification_sent and notification_message_id:
+        try:
+            bot.delete_message(message.chat.id, notification_message_id)
+        except:
+            pass  # Если не удалось удалить - ничего страшного
     
-    # Отправляем ответ
-    bot.reply_to(message, answer, disable_web_page_preview=True)
+    # Отправляем ответ БЕЗ цитирования (используем send_message вместо reply_to)
+    bot.send_message(message.chat.id, answer, disable_web_page_preview=True)
     print("✅ Ответ отправлен пользователю")
     sys.stdout.flush()
 
@@ -130,7 +133,3 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
-
-
