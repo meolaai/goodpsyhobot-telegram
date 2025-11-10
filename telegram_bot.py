@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 26: удалем удаление звездочек и подчеркиваний")
+print("🟢 ВЕРСИЯ 27: удалем превью в последней строке")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -121,7 +121,7 @@ def handle_message(message):
             print(f"❌ Ошибка при удалении уведомления: {e}")
     
     # ОТПРАВЛЯЕМ БЕЗ disable_web_page_preview - чтобы ссылки открывались
-    bot.send_message(message.chat.id, answer)
+    bot.send_message(message.chat.id, answer, disable_web_page_preview=True)
     print("✅ Ответ отправлен пользователю")
     sys.stdout.flush()
 
@@ -151,6 +151,7 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
