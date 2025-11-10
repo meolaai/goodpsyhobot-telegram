@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 21: Испаравляем ошибки")
+print("🟢 ВЕРСИЯ 22: Испаравляем ошибки")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -159,6 +159,7 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
