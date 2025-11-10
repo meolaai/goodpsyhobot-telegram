@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 19: Испаравляем ошибки")
+print("🟢 ВЕРСИЯ 20: Испаравляем ошибки")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -68,8 +68,9 @@ def handle_message(message):
     print(f"📨 Текстовое сообщение: {message.text}")
     sys.stdout.flush()
     
-    # Сразу показываем "печатает"
+    # Сразу показываем "печатает" и добавляем задержку для индикатора
     bot.send_chat_action(message.chat.id, 'typing')
+    time.sleep(2)  # Задержка для лучшего отображения индикатора
     
     # Флаги управления
     notification_sent = False
@@ -77,11 +78,10 @@ def handle_message(message):
     
     def send_delay_notification():
         nonlocal notification_sent, notification_message_id
-        time.sleep(3)  # Ждем 3 секунды
+        time.sleep(5)  # Ждем 5 секунд
         if not notification_sent:
             print("⏳ Отправляем уведомление о долгой обработке")
             sys.stdout.flush()
-            # Обновляем индикатор и отправляем уведомление
             bot.send_chat_action(message.chat.id, 'typing')
             sent_msg = bot.send_message(message.chat.id, "⏳ Ищу наиболее релевантные ответы...")
             notification_message_id = sent_msg.message_id
@@ -95,14 +95,16 @@ def handle_message(message):
     # Получаем ответ от AI
     answer = get_answer_from_huggingface(message.text)
     
-    # Если было отправлено уведомление - удаляем его
+    # Если уведомление было отправлено - удаляем его
     if notification_sent and notification_message_id:
         try:
             bot.delete_message(message.chat.id, notification_message_id)
+            # Даем Telegram время обработать удаление
+            time.sleep(0.5)
         except:
-            pass  # Если не удалось удалить - ничего страшного
+            pass
     
-    # Отправляем ответ БЕЗ цитирования (используем send_message вместо reply_to)
+    # Отправляем ответ БЕЗ цитирования
     bot.send_message(message.chat.id, answer, disable_web_page_preview=True)
     print("✅ Ответ отправлен пользователю")
     sys.stdout.flush()
@@ -133,3 +135,4 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
