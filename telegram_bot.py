@@ -79,15 +79,20 @@ def send_welcome(message):
 
 Просто напишите ваш вопрос — и я найду ответ!"""
     bot.reply_to(message, welcome_text)
+    print("✅ Ответ на /start отправлен")
 
 # Обработчик всех сообщений
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    print(f"📨 Сообщение от {message.from_user.id}: {message.text}")
+    print(f"📨 Текстовое сообщение от {message.from_user.id}: {message.text}")
+    print(f"🔍 Начинаем обработку через AI...")
+    
     bot.send_chat_action(message.chat.id, 'typing')
     answer = get_answer_from_huggingface(message.text)
-    print(f"📤 Отправляем ответ: {answer[:100]}...")
+    
+    print(f"📤 Отправляем ответ пользователю: {answer[:100]}...")
     bot.reply_to(message, answer)
+    print("✅ Ответ отправлен")
 
 # Вебхук endpoint для Telegram
 @app.route('/webhook', methods=['POST'])
@@ -117,6 +122,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Сервер запущен на порту {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
