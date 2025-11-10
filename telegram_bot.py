@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 20: Испаравляем ошибки")
+print("🟢 ВЕРСИЯ 21: Испаравляем ошибки")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -68,18 +68,16 @@ def handle_message(message):
     print(f"📨 Текстовое сообщение: {message.text}")
     sys.stdout.flush()
     
-    # Сразу показываем "печатает" и добавляем задержку для индикатора
-    bot.send_chat_action(message.chat.id, 'typing')
-    time.sleep(2)  # Задержка для лучшего отображения индикатора
-    
     # Флаги управления
     notification_sent = False
     notification_message_id = None
+    answer_received = False
     
     def send_delay_notification():
         nonlocal notification_sent, notification_message_id
         time.sleep(5)  # Ждем 5 секунд
-        if not notification_sent:
+        # Проверяем, не получен ли уже ответ
+        if not answer_received and not notification_sent:
             print("⏳ Отправляем уведомление о долгой обработке")
             sys.stdout.flush()
             bot.send_chat_action(message.chat.id, 'typing')
@@ -95,14 +93,17 @@ def handle_message(message):
     # Получаем ответ от AI
     answer = get_answer_from_huggingface(message.text)
     
+    # Помечаем, что ответ получен
+    answer_received = True
+    
     # Если уведомление было отправлено - удаляем его
     if notification_sent and notification_message_id:
         try:
+            print("🗑️ Удаляем уведомление")
             bot.delete_message(message.chat.id, notification_message_id)
-            # Даем Telegram время обработать удаление
-            time.sleep(0.5)
-        except:
-            pass
+            time.sleep(0.3)  # Короткая пауза для обработки удаления
+        except Exception as e:
+            print(f"❌ Ошибка при удалении уведомления: {e}")
     
     # Отправляем ответ БЕЗ цитирования
     bot.send_message(message.chat.id, answer, disable_web_page_preview=True)
@@ -135,4 +136,5 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
