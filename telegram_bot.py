@@ -3,6 +3,7 @@ import telebot
 from flask import Flask
 import requests
 import time
+import threading
 
 # === НАСТРОЙКИ ===
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -70,9 +71,11 @@ def start_bot():
         print("🔄 Перезапуск через 10 секунд...")
         time.sleep(10)
         start_bot()  # Перезапуск
+
+if __name__ == "__main__":
+    print("🚀 СЕРВИС ЗАПУЩЕН")
     
-    # Запускаем бота в основном потоке
-    import threading
+    # Запускаем бота в отдельном потоке
     bot_thread = threading.Thread(target=start_bot, daemon=True)
     bot_thread.start()
     print("✅ ПОТОК БОТА ЗАПУЩЕН")
@@ -81,4 +84,3 @@ def start_bot():
     port = int(os.environ.get("PORT", 10000))
     print(f"🌐 СЕРВЕР НА ПОРТУ {port}")
     server.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
-
