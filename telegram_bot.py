@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 14: Добавляем уведомление о долгой обработке")
+print("🟢 ВЕРСИЯ 15: Добавляем уведомление о долгой обработке, ждем 3 секунды")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -76,7 +76,7 @@ def handle_message(message):
     
     def send_delay_notification():
         nonlocal delay_notification_sent
-        time.sleep(10)  # Ждем 10 секунд
+        time.sleep(3)  # Ждем 3 секунды
         if not delay_notification_sent:
             print("⏳ Отправляем уведомление о долгой обработке")
             sys.stdout.flush()
@@ -126,3 +126,4 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
