@@ -15,6 +15,10 @@ server = Flask(__name__)
 def home():
     return "🤖 Психобот работает! Порт открыт.", 200
 
+@server.route('/health')
+def health():
+    return "OK", 200
+
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.reply_to(message, "✅ Бот работает! Отправьте мне вопрос.")
@@ -36,23 +40,9 @@ def handle_message(message):
     except Exception as e:
         bot.reply_to(message, f"❌ Ошибка: {str(e)}")
 
-# Простой запуск
+# Запускаем только Flask сервер
 if __name__ == "__main__":
     print("🚀 Запускаем сервис...")
-    
-    # Запускаем бота в фоне
-    def start_bot():
-        time.sleep(10)
-        try:
-            bot.remove_webhook()
-            bot.infinity_polling(skip_pending=True)
-        except Exception as e:
-            print(f"❌ Бот: {e}")
-    
-    import threading
-    threading.Thread(target=start_bot, daemon=True).start()
-    
-    # Запускаем сервер (это важно для порта)
     port = int(os.environ.get("PORT", 10000))
     print(f"🌐 Сервер на порту {port}")
     server.run(host="0.0.0.0", port=port, debug=False)
