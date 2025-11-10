@@ -98,12 +98,22 @@ def handle_message(message):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     print("📍 Получен запрос на /webhook")
+    
     if request.headers.get('content-type') == 'application/json':
         json_string = request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        print("✅ Сообщение обработано")
-        return ''
+        print(f"📨 JSON данные: {json_string}")
+        
+        try:
+            update = telebot.types.Update.de_json(json_string)
+            print(f"🔍 Тип сообщения: {update.message.text if update.message else 'NO_MESSAGE'}")
+            
+            bot.process_new_updates([update])
+            print("✅ Сообщение обработано ботом")
+            return ''
+        except Exception as e:
+            print(f"❌ Ошибка при обработке сообщения: {e}")
+            return 'Error', 500
+            
     print("❌ Неверный content-type")
     return 'Bad request', 400
 
@@ -122,6 +132,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Сервер запущен на порту {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
