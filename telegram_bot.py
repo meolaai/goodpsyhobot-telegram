@@ -17,19 +17,28 @@ app = Flask(__name__)
 def get_answer_from_huggingface(question):
     try:
         print(f"🔍 Запрос к AI: {question}")
+        
+        # Пробуем разные варианты URL
+        api_url = f"{HF_SPACE_URL}/api/predict"
+        print(f"🌐 Пробуем URL: {api_url}")
+        
         response = requests.post(
-            f"{HF_SPACE_URL}/api/predict",
+            api_url,
             json={"data": [question]},
             timeout=30
         )
         print(f"📡 Ответ AI: статус {response.status_code}")
+        print(f"📄 Тело ответа: {response.text[:200]}...")
+        
         if response.status_code == 200:
-            return response.json()["data"][0]
+            result = response.json()
+            return result["data"][0]
         else:
-            return f"❌ Ошибка {response.status_code}"
+            return f"❌ Ошибка {response.status_code}: {response.text}"
+            
     except Exception as e:
         print(f"❌ Ошибка AI: {e}")
-        return f"❌ Ошибка: {str(e)}"
+        return f"❌ Ошибка подключения: {str(e)}"
 
 # Обработчик команды /start
 @bot.message_handler(commands=['start'])
@@ -84,3 +93,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🚀 Сервер запущен на порту {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
+
