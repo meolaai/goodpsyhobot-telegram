@@ -51,18 +51,25 @@ def handle_message(message):
 # ЗАПУСКАЕМ БОТА СРАЗУ ЖЕ
 def start_bot():
     print("🔄 ЗАПУСКАЕМ БОТА...")
-    time.sleep(5)
+    time.sleep(3)  # Уменьшили время ожидания
     try:
+        print("🔄 Сбрасываем webhook...")
         bot.remove_webhook()
+        time.sleep(1)
         print("✅ Webhook сброшен, запускаем polling...")
-        bot.infinity_polling(timeout=90, long_polling_timeout=90)
+        
+        # Тестируем подключение к Telegram API
+        bot_info = bot.get_me()
+        print(f"✅ Бот подключен: @{bot_info.username}")
+        
+        print("🎯 Начинаем слушать сообщения...")
+        bot.infinity_polling(timeout=90, long_polling_timeout=90, restart_on_change=True)
+        
     except Exception as e:
-        print(f"❌ Ошибка бота: {e}")
+        print(f"❌ Ошибка при запуске бота: {e}")
+        print("🔄 Перезапуск через 10 секунд...")
         time.sleep(10)
         start_bot()  # Перезапуск
-
-if __name__ == "__main__":
-    print("🚀 СЕРВИС ЗАПУЩЕН")
     
     # Запускаем бота в основном потоке
     import threading
@@ -74,3 +81,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     print(f"🌐 СЕРВЕР НА ПОРТУ {port}")
     server.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
+
