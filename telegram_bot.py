@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 25: исправляем работу ссылок видео")
+print("🟢 ВЕРСИЯ 26: удалем удаление звездочек и подчеркиваний")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -37,8 +37,8 @@ def get_answer_from_huggingface(question):
         clean_result = (str(result)
             .replace('<strong>', '').replace('</strong>', '')
             .replace('<em>', '').replace('</em>', '')
-            .replace('*', '')  # Убираем звездочки
-            .replace('_', '')  # Убираем подчеркивания
+            #.replace('*', '')  # Убираем звездочки
+            #.replace('_', '')  # Убираем подчеркивания
             .replace('<br>', '\n')
             .replace('<br/>', '\n')
             .replace('<br />', '\n')
@@ -151,5 +151,6 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
