@@ -50,6 +50,10 @@ def home():
 def health():
     return "OK", 200
 
+@server.route('/ping')
+def ping():
+    return "pong", 200
+
 def get_answer_from_huggingface(question):
     """Отправляет вопрос в Hugging Face и получает ответ"""
     try:
@@ -120,37 +124,35 @@ def handle_message(message):
     bot.reply_to(message, answer, parse_mode='HTML')
 
 def run_bot():
-    """Запускает бота с защитой от конфликтов"""
+    """Запускает бота в отдельном потоке"""
     print("🔄 Запуск бота в отдельном потоке...")
-    time.sleep(5)
+    time.sleep(10)  # Даем время запуститься Flask серверу
     
-    max_retries = 5
+    max_retries = 3
     retry_count = 0
     
     while retry_count < max_retries:
         try:
             print(f"🔄 Попытка {retry_count + 1} запуска бота...")
             
-            # Сбрасываем webhook и запускаем polling
+            # Сбрасываем webhook перед запуском polling
             bot.remove_webhook()
             time.sleep(2)
             
-            print("✅ Запускаем infinity_polling...")
+            print("✅ Запускаем polling бота...")
             bot.infinity_polling(
                 skip_pending=True, 
-                timeout=60, 
-                long_polling_timeout=60,
+                timeout=90, 
+                long_polling_timeout=90,
                 restart_on_change=True
             )
-            print("✅ Бот успешно запущен!")
-            break
             
         except Exception as e:
             retry_count += 1
             print(f"❌ Ошибка при запуске бота (попытка {retry_count}): {e}")
             
             if retry_count < max_retries:
-                wait_time = 10 * retry_count
+                wait_time = 15
                 print(f"⏳ Ждем {wait_time} секунд перед повторной попыткой...")
                 time.sleep(wait_time)
             else:
@@ -170,7 +172,9 @@ if __name__ == "__main__":
     bot_thread.start()
     print("✅ Поток бота запущен")
     
-    # Запускаем Flask сервер (это ОСНОВНОЙ процесс)
+    # Запускаем Flask сервер (это ОСНОВНОЙ процесс для Render)
     port = int(os.environ.get("PORT", 10000))
     print(f"🌐 Запускаем Flask сервер на порту {port}")
+    
+    # ВАЖНО: use_reloader=False для многопоточности
     server.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
