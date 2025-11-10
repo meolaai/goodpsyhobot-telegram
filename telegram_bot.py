@@ -13,7 +13,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 API_URL = "https://meolaai-psihobot.hf.space/"  # просто основной URL
 
-print("🟢 ВЕРСИЯ 10:добавляем форматирование")
+print("🟢 ВЕРСИЯ 11: Детальная диагностика AI")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -22,25 +22,38 @@ app = Flask(__name__)
 def get_answer_from_huggingface(question):
     try:
         print(f"🔍 Запрос к AI: {question}")
+        sys.stdout.flush()
+        
         client = Client("meolaai/Psihobot")
+        print("✅ Клиент создан")
+        sys.stdout.flush()
+        
         result = client.predict(
             user_question=question,
             api_name="/find_relevant_quote"
         )
-        print(f"✅ Успешный ответ от AI")
+        print(f"✅ Успешный ответ от AI: {type(result)}")
+        sys.stdout.flush()
         
         # Конвертируем HTML в Markdown для Telegram
-        formatted_result = (str(result)
-            .replace('<strong>', '*').replace('</strong>', '*')  # Жирный текст
-            .replace('<em>', '_').replace('</em>', '_')          # Курсив
-            .replace('<br>', '\n')                               # Переносы строк
+        result_str = str(result)
+        print(f"📄 Результат: {result_str[:200]}...")
+        sys.stdout.flush()
+        
+        formatted_result = (result_str
+            .replace('<strong>', '*').replace('</strong>', '*')
+            .replace('<em>', '_').replace('</em>', '_')
+            .replace('<br>', '\n')
             .replace('<br/>', '\n')
             .replace('<br />', '\n'))
         
+        print("✅ Форматирование завершено")
+        sys.stdout.flush()
         return formatted_result
         
     except Exception as e:
         print(f"❌ Ошибка AI: {e}")
+        sys.stdout.flush()
         return f"❌ Ошибка: {str(e)}"
 
 @bot.message_handler(commands=['start'])
@@ -84,8 +97,3 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
-
-
-
