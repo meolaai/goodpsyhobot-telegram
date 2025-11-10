@@ -10,9 +10,9 @@ sys.stdout.flush()
 # Настройки
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
-API_URL = "https://meolaai-psihobot.hf.space/run/predict"
+API_URL = "https://meolaai-psihobot.hf.space/api/predict"  # используем /api/predict вместо /run/predict
 
-print("🟢 ВЕРСИЯ 5: Принудительный сброс буфера")
+print("🟢 ВЕРСИЯ 6: используем /api/predict вместо /run/predict")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -82,3 +82,4 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
