@@ -3,6 +3,7 @@ import sys
 import telebot
 from flask import Flask, request
 import requests
+from gradio_client import Client
 
 # Принудительно сбрасываем буфер вывода
 sys.stdout.flush()
@@ -12,7 +13,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 API_URL = "https://meolaai-psihobot.hf.space/"  # просто основной URL
 
-print("🟢 ВЕРСИЯ 8: используем просто основной URL")
+print("🟢 ВЕРСИЯ 9:на основе примера из API")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -21,41 +22,16 @@ app = Flask(__name__)
 def get_answer_from_huggingface(question):
     try:
         print(f"🔍 Запрос к AI: {question}")
-        
-        # Вариант 1: Основной API
-        print("🌐 Пробуем основной API...")
-        response1 = requests.post(
-            "https://meolaai-psihobot.hf.space/api/predict",
-            json={"data": [question]},
-            timeout=60
+        client = Client("meolaai/Psihobot")
+        result = client.predict(
+            user_question=question,
+            api_name="/find_relevant_quote"
         )
-        print(f"📡 Вариант 1 статус: {response1.status_code}")
-        
-        if response1.status_code == 200:
-            result = response1.json()
-            print("✅ Успех с основным API!")
-            return result["data"][0]
-        
-        # Вариант 2: Через queue (если вариант 1 не сработал)
-        print("🌐 Пробуем queue API...")
-        response2 = requests.post(
-            "https://meolaai-psihobot.hf.space/queue/join",
-            json={"data": [question]},
-            timeout=60
-        )
-        print(f"📡 Вариант 2 статус: {response2.status_code}")
-        
-        if response2.status_code == 200:
-            result = response2.json()
-            print("✅ Успех с queue API!")
-            return result["data"][0]
-            
-        # Если оба не сработали
-        return f"❌ Оба API вернули ошибки: {response1.status_code} и {response2.status_code}"
-        
+        print(f"✅ Успешный ответ от AI")
+        return str(result)
     except Exception as e:
-        print(f"❌ Ошибка: {e}")
-        return f"❌ Ошибка подключения: {str(e)}"
+        print(f"❌ Ошибка AI: {e}")
+        return f"❌ Ошибка: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -98,6 +74,7 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
 
