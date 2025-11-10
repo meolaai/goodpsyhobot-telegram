@@ -12,7 +12,7 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 API_URL = "https://meolaai-psihobot.hf.space/"  # просто основной URL
 
-print("🟢 ВЕРСИЯ 7: используем просто основной URL")
+print("🟢 ВЕРСИЯ 8: используем просто основной URL")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -21,25 +21,41 @@ app = Flask(__name__)
 def get_answer_from_huggingface(question):
     try:
         print(f"🔍 Запрос к AI: {question}")
-        sys.stdout.flush()
         
-        response = requests.post(
-            API_URL,
+        # Вариант 1: Основной API
+        print("🌐 Пробуем основной API...")
+        response1 = requests.post(
+            "https://meolaai-psihobot.hf.space/api/predict",
             json={"data": [question]},
-            timeout=30
+            timeout=60
         )
-        print(f"📡 Ответ AI: статус {response.status_code}")
-        sys.stdout.flush()
+        print(f"📡 Вариант 1 статус: {response1.status_code}")
         
-        if response.status_code == 200:
-            result = response.json()
+        if response1.status_code == 200:
+            result = response1.json()
+            print("✅ Успех с основным API!")
             return result["data"][0]
-        else:
-            return f"❌ Ошибка {response.status_code}"
+        
+        # Вариант 2: Через queue (если вариант 1 не сработал)
+        print("🌐 Пробуем queue API...")
+        response2 = requests.post(
+            "https://meolaai-psihobot.hf.space/queue/join",
+            json={"data": [question]},
+            timeout=60
+        )
+        print(f"📡 Вариант 2 статус: {response2.status_code}")
+        
+        if response2.status_code == 200:
+            result = response2.json()
+            print("✅ Успех с queue API!")
+            return result["data"][0]
+            
+        # Если оба не сработали
+        return f"❌ Оба API вернули ошибки: {response1.status_code} и {response2.status_code}"
+        
     except Exception as e:
-        print(f"❌ Ошибка AI: {e}")
-        sys.stdout.flush()
-        return f"❌ Ошибка: {str(e)}"
+        print(f"❌ Ошибка: {e}")
+        return f"❌ Ошибка подключения: {str(e)}"
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -82,5 +98,6 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
