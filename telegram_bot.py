@@ -14,7 +14,7 @@ sys.stdout.flush()
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 HF_SPACE_URL = "https://meolaai-psihobot.hf.space"
 
-print("🟢 ВЕРСИЯ 22: Испаравляем ошибки")
+print("🟢 ВЕРСИЯ 23: исправляем заголовки видео")
 sys.stdout.flush()
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -40,27 +40,13 @@ def get_answer_from_huggingface(question):
             .replace('<br/>', '\n')
             .replace('<br />', '\n')
             .strip())  # Убираем пробелы в начале/конце
-        
-        # ДОБАВЛЯЕМ ЗАГОЛОВОК ВИДЕО К КАЖДОЙ ССЫЛКЕ
-        # Ищем все YouTube ссылки и добавляем к ним заголовок
-        import re
-        # Паттерн для поиска YouTube ссылок
-        youtube_pattern = r'(https://youtu\.be/[\w?-]+)'
-        
-        # Добавляем заголовок к каждой ссылке
-        def add_video_title(match):
-            video_url = match.group(1)
-            # Можно добавить любой заголовок, например:
-            return f"🎬 Видео: {video_url}"
-        
-        # Применяем замену ко всем YouTube ссылкам
-        final_result = re.sub(youtube_pattern, add_video_title, clean_result)
-        
+                      
         return final_result
         
     except Exception as e:
         print(f"❌ Ошибка AI: {e}")
         return f"❌ Ошибка: {str(e)}"
+        
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     print(f"🎯 Получен /start от {message.from_user.id}")
@@ -159,7 +145,3 @@ if __name__ == "__main__":
     print(f"🚀 Сервер запущен на порту {port}")
     sys.stdout.flush()
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
-
-
